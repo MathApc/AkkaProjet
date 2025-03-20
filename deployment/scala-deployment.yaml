@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scala-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scala-app
+  template:
+    metadata:
+      labels:
+        app: scala-app
+    spec:
+      containers:
+      - name: scala-app
+        image: scala-app:latest
+        imagePullPolicy: IfNotPresent  # Cette ligne permet de ne pas tirer l'image à chaque fois
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DB_HOST
+          value: "mysql"
+        - name: DB_USER
+          value: "root"
+        - name: DB_PASSWORD
+          value: "root"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scala-app
+spec:
+  selector:
+    app: scala-app
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
