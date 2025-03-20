@@ -7,7 +7,7 @@
   align-items: center;
 }
 
-/* Permet d'assurer que la navbar et le contenu sont bien espacées */
+/* Permet d'assurer que la navbar et le contenu sont bien espacés */
 .content {
   width: 100%;
   max-width: 1200px;
