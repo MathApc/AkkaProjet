@@ -1,0 +1,60 @@
+﻿package routes
+
+import akka.actor.typed.ActorRef
+import akka.actor.typed.scaladsl.AskPattern._
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.model.StatusCodes
+import akka.util.Timeout
+import actors.PortfolioActor
+import actors.PortfolioActor.{AddAsset, GetPortfolio, RemoveAsset, Response}
+import akka.http.scaladsl.server.Route
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import akka.actor.typed.ActorSystem
+import scala.concurrent.ExecutionContext
+
+class PortfolioRoutes(portfolioActor: ActorRef[PortfolioActor.Command])(implicit system: ActorSystem[_]) {
+
+  implicit val timeout: Timeout = 10.seconds
+  implicit val ec: ExecutionContext = system.executionContext
+
+  val routes: Route =
+    pathPrefix("portfolio") {
+      concat(
+        // GET /portfolio → Recuperer les actifs
+        pathEnd {
+          get {
+            val portfolioFuture: Future[Response] = portfolioActor.ask(ref => GetPortfolio(ref))(timeout, system.scheduler)
+            complete(portfolioFuture.map {
+              case PortfolioActor.PortfolioData(assets) => (StatusCodes.OK, assets)
+              case _ => (StatusCodes.InternalServerError, "Erreur lors de la recuperation du portefeuille.")
+            })
+          }
+        },
+        // POST /portfolio/add → Ajouter un actif
+        path("add") {
+          post {
+            parameters("symbol", "quantity".as[Double]) { (symbol, quantity) =>
+              val addFuture: Future[Response] = portfolioActor.ask(ref => AddAsset(symbol, quantity, ref))(timeout, system.scheduler)
+              complete(addFuture.map {
+                case PortfolioActor.OperationResult(message) => (StatusCodes.OK, message)
+                case _ => (StatusCodes.InternalServerError, "Erreur lors de l'ajout de l'actif.")
+              })
+            }
+          }
+        },
+        path("remove") {
+          delete {
+            parameter("symbol") { symbol =>
+              val removeFuture: Future[Response] = portfolioActor.ask(ref => RemoveAsset(symbol, ref))(timeout, system.scheduler)
+              complete(removeFuture.map {
+                case PortfolioActor.OperationResult(message) => (StatusCodes.OK, message)
+                case _ => (StatusCodes.InternalServerError, "Erreur lors de la suppression de l'actif.")
+              })
+            }
+          }
+        }
+      )
+    }
+}

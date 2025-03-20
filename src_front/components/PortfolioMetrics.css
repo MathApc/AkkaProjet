@@ -1,0 +1,28 @@
+.portfolio-metrics-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  margin: auto;
+}
+
+.chart-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.metrics-list p {
+  font-size: 1.2rem;
+  margin: 5px 0;
+}
+
+.error-text {
+  color: red;
+  font-weight: bold;
+}
