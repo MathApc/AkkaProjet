@@ -1,5 +1,6 @@
 import { Line } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from "chart.js";
+import "./PerformanceChart.css";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -17,8 +18,8 @@ const PerformanceChart = () => {
   };
 
   return (
-    <div>
-      <h2>Performance du portefeuille</h2>
+    <div className="performance-chart-container">
+      <h2 className="chart-title">Performance du portefeuille</h2>
       <Line data={data} />
     </div>
   );

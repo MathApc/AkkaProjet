@@ -1,68 +1,46 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect } from "react";
 import { MarketDataContext } from "../context/MarketDataContext";
+import "./MarketMovements.css";
 
 const MarketMovements = () => {
-  const { marketData, loading } = useContext(MarketDataContext);
-  const [formattedData, setFormattedData] = useState([]);
+  const { marketData, setMarketData, loading, setLoading } = useContext(MarketDataContext);
 
   useEffect(() => {
-    if (marketData) {
-      const processedData = marketData.map(({ asset, data }) => {
-        let priceChange = "Données indisponibles";
-
-        if (asset.type === "crypto") {
-          const firstPrice = parseFloat(data[0][1]); // Prix d'ouverture
-          const lastPrice = parseFloat(data[data.length - 1][4]); // Prix de clôture
-          priceChange = `${parseFloat((((lastPrice - firstPrice) / firstPrice) * 100).toFixed(2))}%`;
-        } else if (asset.type === "forex") {
-          const baseCurrency = asset.symbol.substring(0, 3).toLowerCase();
-          const targetCurrency = asset.symbol.substring(3).toLowerCase();
-        
-          if (data[targetCurrency] && data[targetCurrency].rate) {
-            const currentRate = parseFloat(data[targetCurrency].rate);
-            const previousRate = currentRate * (1 - Math.random() * 0.02); // Simule une ancienne valeur (max ±2%)
-        
-            if (previousRate > 0) {
-              priceChange = `${parseFloat((((currentRate - previousRate) / previousRate) * 100).toFixed(4))}%`;
-            }
-          } else {
-            console.warn(`Données manquantes pour ${asset.symbol}`);
-            priceChange = "Données indisponibles";
-          }
-        } else if (asset.type === "stock") {
-          if (data.results && data.results.length > 1) {
-            const firstClose = data.results[0]?.c;
-            const lastClose = data.results[data.results.length - 1]?.c;
-            if (firstClose && lastClose) {
-              priceChange = `${parseFloat((((lastClose - firstClose) / firstClose) * 100).toFixed(2))}%`;
-            }
-          }
-        }
-
-        return {
-          name: asset.name,
-          priceChange,
-          type: asset.type.charAt(0).toUpperCase() + asset.type.slice(1),
-        };
-      });
-
-      setFormattedData(processedData);
+    if (!marketData || marketData.length === 0) {
+      setLoading(true);
     }
-  }, [marketData]);
+  }, [marketData, setLoading]);
 
   return (
-    <div>
-      <h2>Mouvements récents du marché</h2>
+    <div className="market-movements-container">
       {loading ? (
-        <p>Chargement des données...</p>
-      ) : (
-        <ul>
-          {formattedData.map((item, index) => (
-            <li key={index}>
-              {item.name} ({item.type}) : <strong>{item.priceChange}</strong>
-            </li>
-          ))}
+        <p className="loading-text">Chargement des données...</p>
+      ) : marketData && marketData.length > 0 ? (
+        <ul className="market-list">
+          {marketData.map((asset) => {
+            let displayValue;
+
+            if (asset.asset.type === "crypto") {
+              displayValue = `$${parseFloat(asset.data[asset.data.length - 1][4]).toFixed(2)}`; // Dernier prix de clôture
+            } else if (asset.asset.type === "forex") {
+              const forexRates = Object.values(asset.data);
+              displayValue = forexRates.length > 0 ? `${parseFloat(forexRates[0].rate).toFixed(4)} USD` : "Données indisponibles";
+            } else if (asset.asset.type === "stock") {
+              const stockPrices = asset.data.results;
+              displayValue = stockPrices.length > 0 ? `$${parseFloat(stockPrices[stockPrices.length - 1].c).toFixed(2)}` : "Données indisponibles";
+            } else {
+              displayValue = "Données indisponibles";
+            }
+
+            return (
+              <li key={asset.asset.symbol} className="market-item">
+                {asset.asset.name} ({asset.asset.symbol}) : <strong>{displayValue}</strong>
+              </li>
+            );
+          })}
         </ul>
+      ) : (
+        <p className="no-data-text">Aucune donnée disponible.</p>
       )}
     </div>
   );

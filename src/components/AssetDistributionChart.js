@@ -1,23 +1,27 @@
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import "./AssetDistributionChart.css";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-const AssetDistributionChart = () => {
-  const data = {
-    labels: ["Bitcoin", "Ethereum", "Solana", "Autres"],
+const AssetDistributionChart = ({ assetAllocation }) => {
+  const chartData = {
+    labels: Object.keys(assetAllocation),
     datasets: [
       {
-        data: [50, 30, 15, 5], // % par actif
-        backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"],
+        label: "Répartition des actifs",
+        data: Object.values(assetAllocation),
+        backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#4CAF50"],
       },
     ],
   };
 
+  console.log("Format final des données du camembert :", chartData);
+
   return (
-    <div>
-      <h2>Répartition des actifs</h2>
-      <Pie data={data} />
+    <div className="chart-container">
+      <h2 className="chart-title">Répartition des Actifs</h2>
+      <Pie data={chartData} />
     </div>
   );
 };

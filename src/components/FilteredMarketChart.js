@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from "react";
 import { Line } from "react-chartjs-2";
 import { MarketDataContext } from "../context/MarketDataContext";
+import "./FilteredMarketChart.css";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -16,11 +17,11 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 const FilteredMarketChart = () => {
   const { setMarketData, setLoading, loading } = useContext(MarketDataContext);
-  const [chartData, setChartData] = useState({ labels: [], datasets: [] }); 
+  const [chartData, setChartData] = useState({ labels: [], datasets: [] });
   const [selectedCategories, setSelectedCategories] = useState(["crypto", "forex", "stock"]);
   const [selectedPeriod, setSelectedPeriod] = useState("1d");
 
-  const POLYGON_API_KEY = "ipie3FkT8KPYK6C644eEZQsAPXhepwp6"; // clé API Polygon.io
+  const POLYGON_API_KEY = ""//"ipie3FkT8KPYK6C644eEZQsAPXhepwp6"; // clé API Polygon.io
 
   const assets = [
     { type: "crypto", symbol: "BTCUSDT", name: "Bitcoin", color: "#FF6384" },
@@ -60,7 +61,6 @@ const FilteredMarketChart = () => {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`Erreur Forex ${response.status}`);
                 data = await response.json();
-                console.log(`Données API Forex pour ${asset.symbol}:`, data);
               } else if (asset.type === "stock") {
                 const endDate = new Date().toISOString().split("T")[0];
                 const startDate = new Date();
@@ -89,27 +89,7 @@ const FilteredMarketChart = () => {
           return;
         }
 
-        let firstValidResponse = validResponses.find((r) => r.data);
-        let labels = [];
-
-        if (firstValidResponse && firstValidResponse.data) {
-          if (selectedPeriod === "1d") {
-            labels = firstValidResponse.data.map((entry) => {
-              const date = new Date(entry[0]);
-              return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-            });
-          } else {
-            const relativeLabels = {
-              "7d": ["il y a 1 semaine", "il y a 3 jours", "aujourd'hui"],
-              "30d": ["il y a 1 mois", "il y a 3 semaines", "il y a 2 semaines", "cette semaine"],
-              "180d": ["il y a 6 mois", "il y a 4 mois", "il y a 2 mois", "actuellement"],
-              "365d": ["il y a 1 an", "il y a 9 mois", "il y a 6 mois", "il y a 3 mois", "actuellement"],
-            };
-            labels = relativeLabels[selectedPeriod] || [];
-          }
-        }
-
-        console.log("Labels générés :", labels);
+        let labels = validResponses[0].data.map((entry, index) => `Point ${index + 1}`);
 
         const datasets = validResponses
           .map(({ asset, data }) => {
@@ -117,16 +97,16 @@ const FilteredMarketChart = () => {
 
             let values = [];
             if (asset.type === "crypto") {
-              values = data.map((entry) => parseFloat(entry[4])); // Prix de clôture
+              values = data.map((entry) => parseFloat(entry[4]));
             } else if (asset.type === "forex") {
               values = Object.values(data).slice(0, periodOptions[selectedPeriod].days).map((entry) => parseFloat(entry.rate));
             } else if (asset.type === "stock") {
-              values = data.results.map((entry) => entry.c); // Prix de clôture sur Polygon.io
+              values = data.results.map((entry) => entry.c);
             }
 
             return {
               label: asset.name,
-              data: values.slice(-labels.length), // Adapter les valeurs aux labels
+              data: values.slice(-labels.length),
               borderColor: asset.color,
               backgroundColor: asset.color + "33",
               tension: 0.3,
@@ -147,25 +127,21 @@ const FilteredMarketChart = () => {
   }, [selectedCategories, selectedPeriod]);
 
   return (
-    <div>
-      <h2>Évolution des Actifs</h2>
+    <div className="filtered-market-container">
+      <h2 className="chart-title">Évolution du marché</h2>
 
-      {/* Sélecteur de période */}
-      <label htmlFor="period">Période : </label>
-      <select id="period" value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)}>
+      <label htmlFor="period" className="label-select">Période : </label>
+      <select id="period" value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)} className="dropdown">
         {Object.entries(periodOptions).map(([key, value]) => (
-          <option key={key} value={key}>
-            {value.label}
-          </option>
+          <option key={key} value={key}>{value.label}</option>
         ))}
       </select>
 
-      {/* Boutons de filtre */}
-      <div>
-        <button onClick={() => setSelectedCategories(["crypto", "forex", "stock"])}>Tout afficher</button>
-        <button onClick={() => setSelectedCategories(["crypto"])}>Cryptos</button>
-        <button onClick={() => setSelectedCategories(["forex"])}>Forex</button>
-        <button onClick={() => setSelectedCategories(["stock"])}>Actions</button>
+      <div className="button-group">
+        <button className="filter-button" onClick={() => setSelectedCategories(["crypto", "forex", "stock"])}>Tout afficher</button>
+        <button className="filter-button" onClick={() => setSelectedCategories(["crypto"])}>Cryptos</button>
+        <button className="filter-button" onClick={() => setSelectedCategories(["forex"])}>Forex</button>
+        <button className="filter-button" onClick={() => setSelectedCategories(["stock"])}>Actions</button>
       </div>
 
       {loading || !chartData.labels.length ? <p>Chargement des données...</p> : <Line data={chartData} />}
